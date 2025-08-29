@@ -7,6 +7,8 @@ bool click;
 bool click2;
 bool backlight = 0;
 int arraynumber = 0;
+int arraynumberd = 0;
+int arraycount = 0;
 int count = 0;
 int screen = 0;
 float Humidity;
@@ -15,9 +17,9 @@ float Pressure;
 float TempArrayH[6] = {};
 float HumArrayH[6] = {};
 float PressArrayH[6] = {};
-float TempArrayD[] = {};
-float HumArrayD[] = {};
-float PressArrayD[] = {};
+float TempArrayD[24] = {};
+float HumArrayD[24] = {};
+float PressArrayD[24] = {};
 
 void setup() {
   Serial.begin(9600);
@@ -62,12 +64,17 @@ int ButtonRight(){
 int Button(){
   click = digitalRead(7);
   if (click == 1){
-    
-    delay(100);
-    
-    screen +=1;
-    if (screen > 6){
-      screen = 0;
+    for (int a = 0;a < 8;a++){
+      delay(100);
+    }
+    click = digitalRead(7);
+    if (click == 1){
+      arraycount += 1;
+    }else{
+      screen +=1;
+      if (screen > 6){
+        screen = 0;
+      }
     }
     
   }else{
@@ -76,11 +83,11 @@ int Button(){
 }
 
 void SensorRead(){
-
   Humidity = bme.readHumidity();
   Temperature = bme.readTemperature();
   Pressure = bme.readPressure(); 
-
+  
+  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(Temperature);
   lcd.print("C");
@@ -99,10 +106,30 @@ int DataHour(int num){
   Humidity = bme.readHumidity();
   Temperature = bme.readTemperature();
   Pressure = bme.readPressure(); 
-  Serial.println(pressureToMmHg(Pressure));
   TempArrayH[num] = Temperature;
   HumArrayH[num] = Humidity;
   PressArrayH[num] = pressureToMmHg(Pressure);
+}
+
+int DataDay(int num){
+  Humidity = bme.readHumidity();
+  Temperature = bme.readTemperature();
+  Pressure = bme.readPressure(); 
+  TempArrayD[num] = Temperature;
+  HumArrayD[num] = Humidity;
+  PressArrayD[num] = pressureToMmHg(Pressure);
+}
+
+int DataDisplay(float array[],int maxcount, char text[]){
+  if (arraycount >= maxcount){
+    arraycount = 0;
+  }
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(text);
+  lcd.print(arraycount);
+  lcd.setCursor(0, 1);
+  lcd.print(array[arraycount]);
 }
 
 void loop() {
@@ -118,6 +145,11 @@ void loop() {
     if (count % 60 == 0){
       count = 0;
       arraynumber = 0;
+      DataDay(arraynumberd);
+      arraynumberd +=1;
+      if (arraynumberd >24){
+        arraynumberd = 0;
+      }
     }
   }
   for (int i = 0; i < 60; i++){
@@ -130,29 +162,23 @@ void loop() {
         lcd.setCursor(8,1);
         lcd.print(i);
         break;
-      case 1:
-        lcd.clear();
-        lcd.print("TempH");
+      case 1: // вивід значень перебираючи дані в списку, графіка небуде
+        DataDisplay(TempArrayH,6,"TempH:");
         break;
       case 2:
-        lcd.clear();
-        lcd.print("HumH");
+        DataDisplay(HumArrayH,6,"HumH:");
         break;
       case 3:
-        lcd.clear();
-        lcd.print("PressH");
+        DataDisplay(PressArrayH,6,"PressH:");
         break;
       case 4:
-        lcd.clear();
-        lcd.print("TempD");
+        DataDisplay(TempArrayD,24,"TempD:");
         break;
       case 5:
-        lcd.clear();
-        lcd.print("HumD");
+        DataDisplay(HumArrayD,24,"HumD:");
         break;
       case 6:
-        lcd.clear();
-        lcd.print("PressD");
+        DataDisplay(PressArrayD,24,"PressD:");
         break;
     }
     
